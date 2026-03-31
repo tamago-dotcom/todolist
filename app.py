@@ -207,6 +207,7 @@ def delete_category(category_id):
     return redirect(url_for('index', tab='all', sort=sort))
 
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
