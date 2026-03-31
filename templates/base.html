@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Todoリスト</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>Todoリスト</h1>
+</header>
+<div class="container">
+    <nav class="tabs">
+        <a href="{{ url_for('index', tab='all', sort=sort) }}"
+           class="tab-link {% if request.endpoint == 'index' and tab == 'all' %}active{% endif %}">
+            すべて
+        </a>
+        {% for cat in categories %}
+        <span class="tab-with-delete">
+            <a href="{{ url_for('index', tab=cat.id, sort=sort) }}"
+               class="tab-link {% if request.endpoint == 'index' and tab|string == cat.id|string %}active{% endif %}">
+                {{ cat.name }}
+            </a>
+            <form method="post" action="{{ url_for('delete_category', category_id=cat.id) }}"
+                  class="inline-form"
+                  onsubmit="return confirm('「{{ cat.name }}」とそのタスクをすべて削除しますか？')">
+                <input type="hidden" name="sort" value="{{ sort }}">
+                <button type="submit" class="tab-delete-btn" title="カテゴリを削除">×</button>
+            </form>
+        </span>
+        {% endfor %}
+        <a href="{{ url_for('completed', sort=sort) }}"
+           class="tab-link completed-tab {% if request.endpoint == 'completed' %}active{% endif %}">
+            完了済み
+        </a>
+        <span class="tab-divider">|</span>
+        <form method="post" action="{{ url_for('add_category') }}" class="add-category-form">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="text" name="category_name" placeholder="カテゴリ名" maxlength="20">
+            <button type="submit">+ 追加</button>
+        </form>
+    </nav>
+
+    {% block content %}{% endblock %}
+</div>
+
+<!-- 完了確認モーダル -->
+<div class="modal-overlay" id="completeModal">
+    <div class="modal modal-sm">
+        <h3>完了済みにしますか？</h3>
+        <p class="modal-task-name" id="completeTaskName"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeCompleteModal()">キャンセル</button>
+            <button type="button" class="btn-complete-confirm" onclick="confirmComplete()">完了にする</button>
+        </div>
+    </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h3>タスクを編集</h3>
+        <form method="post" id="editForm" class="modal-form">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="hidden" name="source" id="editSource" value="index">
+            <div class="form-group">
+                <label>タスク名</label>
+                <input type="text" name="name" id="editName" required>
+            </div>
+            <div class="form-group">
+                <label>期限</label>
+                <input type="date" name="due_date" id="editDueDate" required>
+            </div>
+            <div class="form-group">
+                <label>カテゴリ</label>
+                <select name="category_id" id="editCategory">
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>優先度</label>
+                <select name="priority" id="editPriority">
+                    <option value="高">高</option>
+                    <option value="中">中</option>
+                    <option value="低">低</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">キャンセル</button>
+                <button type="submit" class="btn-save">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(id, name, dueDate, categoryId, priority, source) {
+    document.getElementById('editForm').action = '/task/edit/' + id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editDueDate').value = dueDate;
+    document.getElementById('editCategory').value = categoryId;
+    document.getElementById('editPriority').value = priority;
+    document.getElementById('editSource').value = source || 'index';
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// 完了確認モーダル
+let pendingCompleteForm = null;
+
+function openCompleteModal(formEl, taskName) {
+    pendingCompleteForm = formEl;
+    document.getElementById('completeTaskName').textContent = taskName;
+    document.getElementById('completeModal').classList.add('active');
+}
+
+function closeCompleteModal() {
+    document.getElementById('completeModal').classList.remove('active');
+    pendingCompleteForm = null;
+}
+
+function confirmComplete() {
+    if (pendingCompleteForm) pendingCompleteForm.submit();
+}
+
+document.getElementById('completeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompleteModal();
+});
+</script>
+</body>
+</html>

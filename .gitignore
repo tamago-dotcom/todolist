@@ -1,0 +1,20 @@
+# データベース
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 仮想環境
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

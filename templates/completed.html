@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="controls">
+    <span class="task-count">{{ tasks|length }} 件</span>
+    <form method="get" action="{{ url_for('completed') }}" class="sort-form">
+        <label>並び替え：</label>
+        <select name="sort" onchange="this.form.submit()">
+            <option value="due" {% if sort == 'due' %}selected{% endif %}>期限順</option>
+            <option value="priority" {% if sort == 'priority' %}selected{% endif %}>優先度順</option>
+            <option value="created" {% if sort == 'created' %}selected{% endif %}>作成日順</option>
+        </select>
+    </form>
+</div>
+
+<div class="task-list">
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-item completed-task">
+            <div class="task-info">
+                <div class="task-name completed-name">{{ task.name }}</div>
+                <div class="task-meta">
+                    <span>期限: {{ task.due_date }}</span>
+                    <span>{{ task.category_name }}</span>
+                    <span class="priority-badge priority-{{ 'high' if task.priority == '高' else ('mid' if task.priority == '中' else 'low') }}">
+                        {{ task.priority }}
+                    </span>
+                </div>
+            </div>
+            <div class="task-actions">
+                <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}"
+                      onsubmit="return confirm('このタスクを削除しますか？')">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="source" value="completed">
+                    <button type="submit" class="btn-delete">削除</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">完了済みのタスクはありません</div>
+    {% endif %}
+</div>
+
+{% endblock %}

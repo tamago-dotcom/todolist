@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="controls">
+    <span class="task-count">{{ tasks|length }} 件</span>
+    <form method="get" action="{{ url_for('index') }}" class="sort-form">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <label>並び替え：</label>
+        <select name="sort" onchange="this.form.submit()">
+            <option value="due" {% if sort == 'due' %}selected{% endif %}>期限順</option>
+            <option value="priority" {% if sort == 'priority' %}selected{% endif %}>優先度順</option>
+            <option value="created" {% if sort == 'created' %}selected{% endif %}>作成日順</option>
+        </select>
+    </form>
+</div>
+
+<div class="task-list">
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-item">
+            <form method="post" action="{{ url_for('complete_task', task_id=task.id) }}" id="completeForm-{{ task.id }}">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <input type="hidden" name="sort" value="{{ sort }}">
+                <button type="button" class="task-complete-btn" title="完了にする"
+                    data-form-id="completeForm-{{ task.id }}"
+                    data-task-name="{{ task.name }}"
+                    onclick="openCompleteModal(document.getElementById(this.dataset.formId), this.dataset.taskName)">
+                </button>
+            </form>
+            <div class="task-info">
+                <div class="task-name">{{ task.name }}</div>
+                <div class="task-meta">
+                    <span>期限: {{ task.due_date }}</span>
+                    <span>{{ task.category_name }}</span>
+                    <span class="priority-badge priority-{{ 'high' if task.priority == '高' else ('mid' if task.priority == '中' else 'low') }}">
+                        {{ task.priority }}
+                    </span>
+                </div>
+            </div>
+            <div class="task-actions">
+                <button class="btn-edit"
+                    data-task-id="{{ task.id }}"
+                    data-task-name="{{ task.name }}"
+                    data-due-date="{{ task.due_date }}"
+                    data-category-id="{{ task.category_id }}"
+                    data-priority="{{ task.priority }}"
+                    onclick="openEditModal(this.dataset.taskId, this.dataset.taskName, this.dataset.dueDate, this.dataset.categoryId, this.dataset.priority, 'index')">
+                    編集
+                </button>
+                <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}"
+                      onsubmit="return confirm('このタスクを削除しますか？')">
+                    <input type="hidden" name="tab" value="{{ tab }}">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <button type="submit" class="btn-delete">削除</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">タスクがありません</div>
+    {% endif %}
+</div>
+
+<div class="add-task-card">
+    <h3>タスクを追加</h3>
+    <form method="post" action="{{ url_for('add_task') }}" class="add-task-form">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <div class="form-group task-name-group">
+            <label>タスク名</label>
+            <input type="text" name="name" placeholder="タスク名を入力" required>
+        </div>
+        <div class="form-group">
+            <label>期限</label>
+            <input type="date" name="due_date" required>
+        </div>
+        <div class="form-group">
+            <label>カテゴリ</label>
+            <select name="category_id">
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if tab|string == cat.id|string %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>優先度</label>
+            <select name="priority">
+                <option value="高">高</option>
+                <option value="中" selected>中</option>
+                <option value="低">低</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-add">追加</button>
+    </form>
+</div>
+
+{% endblock %}
